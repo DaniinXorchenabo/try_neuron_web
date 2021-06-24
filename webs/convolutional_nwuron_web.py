@@ -64,14 +64,14 @@ class WeightsMatrix:
         self.size = synapses_size
         try:
 
-            self.weights = getattr(importlib.import_module(f"weights2.weights"), f"matrix_{self.number}")  #
+            self.weights: np.array = getattr(importlib.import_module(f"weights2.weights"), f"matrix_{self.number}")  #
             self.basis = getattr(importlib.import_module(f"weights2.weights"), f"matrix_basis_{self.number}")
             print("читаем из файла")
-        except (ModuleNotFoundError, AttributeError) as e:
+        except (ModuleNotFoundError, AttributeError, SyntaxError) as e:
 
             # self.weights = np.zeros(synapses_size, dtype=np.float32)  # has to be unsigned bytes
             # self.weights[:] = np.random.random()
-            self.weights = np.random.rand(*synapses_size).astype(np.float16) - 0.5
+            self.weights: np.array = np.random.rand(*synapses_size).astype(np.float16) - 0.5
             self.basis = 0
 
             print('не читаем из файла', e)
@@ -84,10 +84,11 @@ class WeightsMatrix:
 
     def save_weights(self):
 
-        WeightsMatrix.file_weights_content += f"matrix_{self.number} = np.asarray([" + ', \n'.join(
-                ['[' + ", ".join([str(j) for j in i]) + ']' for i in self.weights]) + "], dtype=np.float16)\n"
+        WeightsMatrix.file_weights_content += f"matrix_{self.number} = np.asarray(["
+        shape = self.weights.shape
+        WeightsMatrix.file_weights_content += ', '.join([str(i) for i in self.weights.ravel()])
+        WeightsMatrix.file_weights_content += f"], dtype=np.float16).reshape({', '.join([str(i) for i in shape])})\n"
         WeightsMatrix.file_weights_content += f"matrix_basis_{self.number} = {self.basis}\n\n"
-
 
 
 class ConvolutionalNeuron:
@@ -110,18 +111,60 @@ class ConvolutionalNeuron:
         return result
 
 
-filters = [WeightsMatrix([3, 3]) for i in range(16)]
-one_layer = [[[ConvolutionalNeuron(filters[m], (i, j)) for j in range(6)]
-             for i in range(6)] for m in range(16)]
+def layer_iteration(layer, data):
+    return np.array([[[j.test_img(data) for j in i] for i in m] for m in layer], dtype=np.float16).reshape(
+        *data.shape[:2], -1)
 
+
+def pool_iteration(data: np.array):
+    # data = data[:, :, 0]
+    # shape = data.shape
+
+    return np.transpose(np.array(
+        [
+            [
+                [
+                    np.max(data[i:i + 2, j:j + 2, m])
+                    for j in range(0, data.shape[1], 2)
+                ]
+                for i in range(0, data.shape[0], 2)
+            ]
+            for m in range(data.shape[-1])
+        ],
+        dtype=np.float16), (1, 2, 0)) #.reshape(data.shape[0]//2, data.shape[1]//2, *data.shape[2:])
+
+
+def get_layer(filters, data_size: tuple[int, int]):
+    return [[[ConvolutionalNeuron(matrix, (i, j, *matrix.size[2:])) for j in range(data_size[1])]
+             for i in range(data_size[0])] for matrix in filters]
+
+
+# =======! DATA !=======
 arr = array([[1, 2, 3, 4, 5, 6],
              [9, 8, 7, 6, 5, 4],
              [2, 3, 4, 5, 6, 7],
              [3, 4, 5, 6, 7, 8],
              [8, 7, 6, 5, 4, 3],
              [1, 2, 3, 6, 7, 8]]) * 0.1
+arr = np.transpose(np.stack((arr, arr.copy()[::-1], arr.copy()[::, ::-1])), (1, 2, 0))
 
-result = np.array([[[j.test_img(arr) for j in i] for i in m] for m in one_layer], dtype=np.float16)
+# =======! LAYERS !=======
+filters = [[WeightsMatrix([3, 3, 3]) for _ in range(16)],
+           [WeightsMatrix([3, 3, 16]) for _ in range(16)],
+           # [WeightsMatrix([3, 3, 3]) for _ in range(16)],
+           # [WeightsMatrix([3, 3, 3]) for _ in range(16)],
+           ]
+one_layer = get_layer(filters[0], (6, 6))
+two_layer = get_layer(filters[1], (6, 6))
 
-[i.save_weights() for i in filters]
+# =======! Go neuron web !=======
+result = layer_iteration(one_layer, arr)
+result = np.maximum(result, 0)  # ReLU
+result = layer_iteration(two_layer, result)
+result = np.maximum(result, 0)
+print(result[:, :, 0])
+result = pool_iteration(result)
+print(result[:, :, 0])
+# =======! Save weights !=======
+[i.save_weights() for layer_filters in filters for i in layer_filters]
 WeightsMatrix.save_file_weights()
