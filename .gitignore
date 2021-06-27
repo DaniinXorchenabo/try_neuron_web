@@ -3,3 +3,5 @@
 /**/weights*/**/*
 /data/img/**/*
 /**/fonts/**/*
+!/**/test_jupiter/**/*
+/**/venv/**/*

@@ -38,15 +38,16 @@ def create_data():
 def create_data1():
     """Генерирует картинки бкув разных шрифтов"""
 
-    fonts = [join(root, file) for root, _, files in os.walk(join(os.getcwd(), "fonts")) for file in files if
+    fonts = [join(root, file) for root, _, files in os.walk(join(os.getcwd(), "utils/fonts")) for file in files if
              file.endswith(".ttf")]
+    # print(fonts)
     fonts = {str(ind): ImageFont.truetype(i, size=26) for ind, i in enumerate(fonts)}
     for i in range(ord("а"), ord("а") + 34):
         for num, font in fonts.items():
-            im = Image.new('RGB', (30, 30), color=(255, 255, 255))
+            im = Image.new('RGB', (32, 32), color=(255, 255, 255))
             draw_text = ImageDraw.Draw(im)
             draw_text.text((3, 3), chr(i), font=font, fill=(0, 0, 0))
-            im.save(f"img/{chr(i)}.{num}.jpeg")
+            im.save(f"data/img32/{chr(i)}.{num}.jpeg")
 
 
-# create_data()
+create_data1()

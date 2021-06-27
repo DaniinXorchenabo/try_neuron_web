@@ -1,3 +1,9 @@
 numpy
 pillow
-pygame
+jupyter
+notebook
+wheel
+tornado==5.1.1
+matplotlib
+scipy
+websocket-client
