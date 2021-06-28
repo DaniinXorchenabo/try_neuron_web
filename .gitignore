@@ -1,0 +1,6 @@
+/**/data/img*/**/*
+/**/venv/**/*
+/**/.idea/**/*
+/**/__pycache__/**/*
+/**/fonts/**/*
+/**/webs/weight*/**/*
