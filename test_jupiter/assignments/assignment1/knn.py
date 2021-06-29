@@ -61,7 +61,6 @@ class KNN:
                 dists[i_test][i_train] = np.sum(np.abs(self.train_X[i_train] - X[i_test]))
         return dists
 
-
     def compute_distances_one_loop(self, X):
         '''
         Computes L1 distance from every sample of X to every training sample
@@ -79,7 +78,8 @@ class KNN:
         dists = np.zeros((num_test, num_train), np.float32)
         test = dists.shape
         for i_test in range(num_test):
-            dists[i_test] = np.sum(np.abs(self.train_X - X[i_test]), 1)
+            # print(X[i_test].shape, self.train_X.shape)
+            dists[i_test] = np.sum(np.abs(self.train_X - X[i_test]), tuple(range(1, len(self.train_X.shape))))
 
         # dists = np.sum(np.abs(num_train - num_test))
         assert dists.shape == test
@@ -124,7 +124,9 @@ class KNN:
         pred = np.zeros(num_test, np.bool)
         for i in range(num_test):
             # TODO: Implement choosing best class based on k
-            pred[i] = Counter(sorted(list(zip(dists[num_test], self.train_y)), key=lambda i: i[0])[:self.k]).most_common()[0][1]
+            pred[i] = Counter(
+                map(lambda i: i[1], sorted(list(zip(dists[i], self.train_y)), key=lambda i: i[0])[:self.k])
+            ).most_common()[0][0]
             # pred[i] = max(Counter(dists[num_test][:self.k]).items(), key=lambda i: i[1])[0]
         return pred
 
@@ -143,8 +145,17 @@ class KNN:
         num_test = dists.shape[0]
         num_test = dists.shape[0]
         pred = np.zeros(num_test, np.int)
+        # print("86544567890")
         for i in range(num_test):
             # TODO: Implement choosing best class based on k
             # print(sorted(list(zip(dists[i], self.train_y)), key=lambda i: i[0]))
-            pred[i] = Counter(sorted(list(zip(dists[i], self.train_y)), key=lambda i: i[0])[:self.k]).most_common()[0][1]
+            pred[i] = Counter(
+                map(lambda i: i[1], sorted(list(zip(dists[i], self.train_y)), key=lambda i: i[0])[:self.k])
+            ).most_common()[0][0]
+            # print(Counter(
+            #   map(lambda i: i[1] ,sorted(list(zip(dists[i], self.train_y)), key=lambda i: i[0])[:self.k])
+            #   ).most_common())
+            # print("\n", Counter(
+            #   map(lambda i: i[1] ,sorted(list(zip(dists[i], self.train_y)), key=lambda i: i[0])[:self.k])
+            # ))
         return pred

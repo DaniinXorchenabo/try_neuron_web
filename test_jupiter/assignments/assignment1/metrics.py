@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def binary_classification_metrics(prediction: np.ndarray, ground_truth: np.ndarray):
     '''
     Computes metrics for binary classification
@@ -24,7 +25,7 @@ def binary_classification_metrics(prediction: np.ndarray, ground_truth: np.ndarr
     # Some helpful links:
     # https://en.wikipedia.org/wiki/Precision_and_recall
     # https://en.wikipedia.org/wiki/F1_score
-    print(precision, recall, f1, accuracy)
+    # print(precision, recall, f1, accuracy)
     return precision, recall, f1, accuracy
 
 
